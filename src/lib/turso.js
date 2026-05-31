@@ -152,11 +152,20 @@ export async function search(query) {
     orderArgs.push(`${v}%`);
   }
 
+  // Exclude common Serial/Index columns to avoid matching raw row indexes
+  const excludeCondition = `
+    LOWER(column_name) NOT IN (
+      'sr no', 'sr. no.', 'sr.no.', 'srno', 's.no.', 's. no.', 'sno', 
+      'serial no', 'serial number', 'sl. no.', 'sl no', 'slno', 
+      'sr. no', 'sr.no', 'sr', 'sl', 'sn', 's.n.', 's. n.', 'index', 'idx'
+    )
+  `;
+
   // Combine query
   const sql = `
     SELECT id, file_name, sheet_name, row_no, column_name, cell_value
     FROM excel_data
-    WHERE ${whereClauses}
+    WHERE (${whereClauses}) AND ${excludeCondition}
     ORDER BY
       CASE
         ${orderCases.join("\n        ")}
